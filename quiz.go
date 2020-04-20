@@ -45,8 +45,7 @@ func askQuestions(c context.Context, items []quizItem, s chan<- int) {
 			var response string
 			_, err := fmt.Fscanf(os.Stdin, "%s", &response)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "can't read that")
-				r <- ""
+				response = ""
 			}
 			r <- response
 		}
