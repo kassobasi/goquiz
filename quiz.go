@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -18,10 +19,11 @@ type quizItem struct {
 func main() {
 	f := flag.String("f", "program.csv", "name of the CSV file that contains questions and answers")
 	t := flag.Int("t", 30, "timer in seconds")
+	shuffle := flag.Bool("s", false, "shuffle questions")
 
 	flag.Parse()
 
-	items, err := getQuizItems(f)
+	items, err := getQuizItems(f, shuffle)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
@@ -67,7 +69,7 @@ LOOP:
 	s <- score
 }
 
-func getQuizItems(name *string) ([]quizItem, error) {
+func getQuizItems(name *string, shuffle *bool) ([]quizItem, error) {
 	f, err := os.Open(*name)
 	if err != nil {
 		return nil, fmt.Errorf("can't open file: %v %v", *name, err)
@@ -88,5 +90,11 @@ func getQuizItems(name *string) ([]quizItem, error) {
 		items = append(items, quizItem{question: l[0], answer: strings.TrimSpace(l[1])})
 	}
 
+	if *shuffle {
+		rand.Seed(time.Now().Unix())
+		rand.Shuffle(len(items), func(i, j int) {
+			items[i], items[j] = items[j], items[i]
+		})
+	}
 	return items, nil
 }
