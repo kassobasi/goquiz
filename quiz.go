@@ -32,30 +32,25 @@ func main() {
 	c := context.Background()
 	tc, _ := context.WithTimeout(c, time.Duration(*t)*time.Second)
 
-	s := make(chan int, 1)
-	go askQuestions(tc, items, s)
-
-	score := <-s
+	score := askQuestions(tc, items)
 	fmt.Fprintf(os.Stdout, "Your score is %d/%d\n", score, len(items))
 }
 
-func askQuestions(c context.Context, items []quizItem, s chan<- int) {
+func askQuestions(c context.Context, items []quizItem) int {
 	score := 0
 	r := make(chan string)
-	go func() {
-		for {
+
+LOOP:
+	for _, item := range items {
+		fmt.Fprintf(os.Stdout, "%v? ", item.question)
+		go func() {
 			var response string
 			_, err := fmt.Fscanf(os.Stdin, "%s", &response)
 			if err != nil {
 				response = ""
 			}
 			r <- response
-		}
-	}()
-
-LOOP:
-	for _, item := range items {
-		fmt.Fprintf(os.Stdout, "%v? ", item.question)
+		}()
 		select {
 		case <-c.Done():
 			break LOOP
@@ -66,7 +61,7 @@ LOOP:
 		}
 	}
 
-	s <- score
+	return score
 }
 
 func getQuizItems(name *string, shuffle *bool) ([]quizItem, error) {
